@@ -96,7 +96,9 @@ Like editing templates, modify the runtime configuration.
 
 1. Create a file.
 2. Name the configuration file `user_config.ini`.
-3. Paste the default configuration.
+3. Paste the default configuration. (when creating `user_config.ini`, you can only enter the configuration items you
+   want to modify, no need to copy the entire `config.ini`. Note that the `[Settings]` at the top of the configuration
+   file must be retained, otherwise the custom configuration below will not take effect)
 4. Modify the template and result file configuration:
     - source_file = config/user_demo.txt
     - final_file = output/user_result.txt
@@ -122,23 +124,36 @@ Adjust the configuration as needed, here is the default configuration descriptio
 
 `user_` prefix).
 
-- Subscription sources (`config/subscribe.txt`):
+- Subscription sources (`config/subscribe.txt`)
+
   Supports txt and m3u addresses as subscriptions, the program will read the channel interface data in sequence.
   ![Subscription sources](./images/subscribe.png 'Subscription sources')
 
-- Blacklist (`config/blacklist.txt`):
+
+- Local sources（`config/local.txt`）
+
+  The channel interface data comes from local files, and the program will read the channel interface data in sequence.
+  ![Local sources](./images/local.png 'Local sources')
+
+
+- Blacklist (`config/blacklist.txt`)
+
   Interfaces that match the blacklist keywords will be filtered and not collected, such as low-quality interfaces with
   ads.
   ![Blacklist](./images/blacklist.png 'Blacklist')
 
-- Whitelist (`config/whitelist.txt`):
+
+- Whitelist (`config/whitelist.txt`)
+
   Interfaces or subscription sources in the whitelist will not participate in speed testing and will be prioritized at
   the top of the results. Fill in the channel name to directly retain the record in the final result, such as: CCTV-1,
   interface address, only filling in the interface address will apply to all channels, multiple records are entered on
   separate lines.
   ![Whitelist](./images/whitelist.png 'Whitelist')
 
-- Multicast data (`config/rtp`):
+
+- Multicast data (`config/rtp`)
+
   In addition, you can also maintain multicast source data yourself, the files are located in the config/rtp directory,
   and the file naming format is: `region_operator.txt`.
   ![Multicast data](./images/rtp.png 'Multicast data')
@@ -202,13 +217,14 @@ mark).
 ![Workflow executed successfully](./images/workflow-success.png 'Workflow executed successfully')
 
 At this point, you can visit the file link to see if the latest results have been synchronized:
-https://ghproxy.cc/https://raw.githubusercontent.com/your\_github\_username/repository\_name (corresponding to the TV
+https://raw.githubusercontent.com/your\_github\_username/repository\_name (corresponding to the TV
 created when forking)
 /master/output/user\_result.txt
 
 Or proxy address:
 https://cdn.jsdelivr.net/gh/your\_github\_username/repository\_name (corresponding to the TV created when forking)
 @master/output/user\_result.txt
+
 ![Username and Repository Name](./images/rep-info.png 'Username and Repository Name')
 
 If you can access this link and it returns the updated interface content, then your live source interface link has been
@@ -224,6 +240,7 @@ successfully created! Simply copy and paste this link into software like `TVBox`
 If you want to modify the update frequency (default: 6:00 AM and 18:00 PM Beijing time daily), you can modify the
 `on: schedule: - cron` field:
 ![.github/workflows/main.yml](./images/schedule-cron.png '.github/workflows/main.yml')
+
 If you want to perform updates every 2 days, you can modify it like this:
 
 ```bash
@@ -278,19 +295,11 @@ pipenv run ui
 
 ![IPTV-API Update Software](./images/ui.png 'IPTV-API Update Software')
 
-If you do not understand the software configuration options, do not change anything, just click start update.
+If you do not understand the software configuration options, do not change anything, just click start.
 
 ## Docker
 
-- `iptv-api` (full version): High performance requirements, slower update speed, high stability, and success rate;
-  modify the configuration `open_driver = False` to switch to the `Lite` version mode (recommended for hotel sources,
-  multicast sources, and keyword search).
-- `iptv-api:lite` (lite version): Lightweight, low performance requirements, fast update speed, uncertain stability (
-  recommended for subscription sources).
-
-### 1. Pull the image:
-
-- iptv-api:
+### 1. Pull the image
 
 ```bash
 docker pull guovern/iptv-api:latest
@@ -302,65 +311,65 @@ docker pull guovern/iptv-api:latest
 docker pull docker.1ms.run/guovern/iptv-api:latest
 ```
 
-- iptv-api:lite
-
-```bash
-docker pull guovern/iptv-api:lite
-```
-
-🚀 Proxy acceleration (recommended for users in China):
-
-```bash
-docker pull docker.1ms.run/guovern/iptv-api:lite
-```
-
-### 2. Run the container:
-
-- iptv-api:
+### 2. Run the container
 
 ```bash
 docker run -d -p 8000:8000 guovern/iptv-api
 ```
 
-- iptv-api:lite:
+#### Mount (recommended):
+
+This allows synchronization of files between the host machine and the container. Modifying templates, configurations,
+and retrieving updated result files can be directly operated in the host machine's folder.
+
+Taking the host path /etc/docker as an example:
 
 ```bash
-docker run -d -p 8000:8000 guovern/iptv-api:lite
-```
-
-#### Volume mount parameters (optional):
-
-To synchronize files between the host and the container, modify templates, configurations, and obtain update result
-files directly in the host folder.
-
-Using the host path `/etc/docker` as an example:
-
-- iptv-api:
-
-```bash
-docker run -v /etc/docker/config:/iptv-api/config -v /etc/docker/output:/iptv-api/output -d -p 8000:8000 guovern/iptv-api
-```
-
-- iptv-api:lite:
-
-```bash
-docker run -v /etc/docker/config:/iptv-api-lite/config -v /etc/docker/output:/iptv-api-lite/output -d -p 8000:8000 guovern/iptv-api:lite
+-v /etc/docker/config:/iptv-api/config
+-v /etc/docker/output:/iptv-api/output
 ```
 
 ##### Note: If you pull the image again to update the version, and there are changes or additions to the configuration files, be sure to overwrite the old configuration files in the host (config directory), as the host configuration files cannot be updated automatically. Otherwise, the container will still run with the old configuration.
 
-#### Port environment variables:
+#### Environment Variables:
 
-```bash
--e APP_PORT=8000
-```
+| Variable    | Description          | Default Value      |
+|:------------|:---------------------|:-------------------|
+| APP_HOST    | Service host address | "http://localhost" |
+| APP_PORT    | Service port         | 8000               |
+| UPDATE_CRON | Scheduled task time  | "0 22,10 * * *"    |
 
-### 3. Update results:
+### 3. Update Results
 
-```
-- API address: `ip:8000`
-- m3u api: `ip:8000/m3u`
-- txt api: `ip:8000/txt`
-- API content: `ip:8000/content`
-- Speed test log: `ip:8000/log`
-```
+| Endpoint  | Description           |
+|:----------|:----------------------|
+| /         | Default endpoint      |
+| /m3u      | m3u format endpoint   |
+| /txt      | txt format endpoint   |
+| /ipv4     | ipv4 default endpoint |
+| /ipv6     | ipv6 default endpoint |
+| /ipv4/txt | ipv4 txt endpoint     |
+| /ipv6/txt | ipv6 txt endpoint     |
+| /ipv4/m3u | ipv4 m3u endpoint     |
+| /ipv6/m3u | ipv6 m3u endpoint     |
+| /content  | Endpoint content      |
+| /log      | Speed test log        |
+
+- RTMP Streaming:
+
+| Streaming Endpoint | Description                      |
+|:-------------------|:---------------------------------|
+| /live              | live streaming endpoint          |
+| /hls               | hls streaming endpoint           |
+| /live/txt          | live txt streaming endpoint      |
+| /hls/txt           | hls txt streaming endpoint       |
+| /live/m3u          | live m3u streaming endpoint      |
+| /hls/m3u           | hls m3u streaming endpoint       |
+| /live/ipv4/txt     | live ipv4 txt streaming endpoint |
+| /hls/ipv4/txt      | hls ipv4 txt streaming endpoint  |
+| /live/ipv4/m3u     | live ipv4 m3u streaming endpoint |
+| /hls/ipv4/m3u      | hls ipv4 m3u streaming endpoint  |
+| /live/ipv6/txt     | live ipv6 txt streaming endpoint |
+| /hls/ipv6/txt      | hls ipv6 txt streaming endpoint  |
+| /live/ipv6/m3u     | live ipv6 m3u streaming endpoint |
+| /hls/ipv6/m3u      | hls ipv6 m3u streaming endpoint  |
